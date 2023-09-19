@@ -2,7 +2,7 @@ package gd
 
 type Source interface {
 	GetDoc(name string) string
-	Watch() <-chan DocChange
+	Watch() <-chan []DocChange
 	Close()
 }
 

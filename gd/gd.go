@@ -2,8 +2,6 @@ package gd
 
 import (
 	"game_tools/internal/resync"
-	"strings"
-	"time"
 )
 
 type store struct {
@@ -31,26 +29,30 @@ type Key interface {
 }
 
 type Row struct {
-	store  store
-	deps   []int
-	parser func(string) interface{}
+	store   store
+	deps    []int
+	affects []int
+	parser  func(string) interface{}
 }
 
 type Gdd struct {
 	row    []Row
 	source Source
-	suffix string
 
 	mapper map[string]int
 }
 
-func NewGdd(max int, source Source, suffix string) *Gdd {
+func NewGdd(max int, source Source) *Gdd {
 	return &Gdd{
 		row:    make([]Row, max),
 		source: source,
-		suffix: suffix,
 		mapper: make(map[string]int),
 	}
+}
+
+func (gdd *Gdd) Start() {
+	gdd.buildDeps()
+	go gdd.loop()
 }
 
 func (gdd *Gdd) Register(key Key, loader func(string) interface{}, deps ...Key) {
@@ -71,34 +73,40 @@ func (gdd *Gdd) GetDoc(key Key) (doc interface{}) {
 	return c.store.Load(key, gdd.source.GetDoc, c.parser)
 }
 
-func (gdd *Gdd) reset(key Key) {
-	c := &gdd.row[key.Idx()]
+func (gdd *Gdd) buildDeps() {
+	for idx := range gdd.row {
+		a := &gdd.row[idx]
+		for _, dep := range a.deps {
+			b := &gdd.row[dep]
+			b.affects = append(b.affects, idx)
+		}
+	}
+}
+
+func (gdd *Gdd) dfs(root int, set map[int]struct{}) {
+	set[root] = struct{}{}
+	c := &gdd.row[root]
+	for _, affect := range c.affects {
+		gdd.dfs(affect, set)
+	}
+}
+
+func (gdd *Gdd) reset(idx int) {
+	c := &gdd.row[idx]
 	c.store.Reset()
 }
 
-func (gdd *Gdd) check(name string) (tag string, ok bool) {
-	if gdd.suffix == "" {
-		return name, true
-	}
-	if strings.HasSuffix(name, gdd.suffix) {
-		return name[:len(name)-len(gdd.suffix)], true
-	}
-	return "", false
-}
-
-func (gdd *Gdd) Start() {
-	var (
-		wait   <-chan time.Time
-		update = gdd.source.Watch()
-	)
-	for {
-		select {
-		case u, ok := <-update:
-			if !ok {
-				return
+func (gdd *Gdd) loop() {
+	update := gdd.source.Watch()
+	for us := range update {
+		affect := make(map[int]struct{}, 2*len(us))
+		for _, u := range us {
+			if idx, ok := gdd.mapper[u.Name]; ok {
+				gdd.dfs(idx, affect)
 			}
-			tag, ok := gdd.check(u.Name)
-
+		}
+		for idx := range affect {
+			gdd.reset(idx)
 		}
 	}
 }
