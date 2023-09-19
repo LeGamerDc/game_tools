@@ -1,7 +1,9 @@
 package gd
 
 import (
+	"game_tools/internal"
 	"game_tools/internal/resync"
+	"sort"
 )
 
 type store struct {
@@ -32,6 +34,7 @@ type Row struct {
 	store   store
 	deps    []int
 	affects []int
+	sort    int
 	parser  func(string) interface{}
 }
 
@@ -81,6 +84,27 @@ func (gdd *Gdd) buildDeps() {
 			b.affects = append(b.affects, idx)
 		}
 	}
+
+	n := len(gdd.row)
+	sort := 0
+	visited := make(map[int]struct{}, n)
+	for i := 0; i < n; i++ {
+		for idx := range gdd.row {
+			c := &gdd.row[idx]
+			top := true
+			for _, dep := range c.deps {
+				if _, ok := visited[dep]; !ok {
+					top = false
+					break
+				}
+			}
+			if top {
+				c.sort = sort
+				sort++
+				visited[idx] = struct{}{}
+			}
+		}
+	}
 }
 
 func (gdd *Gdd) dfs(root int, set map[int]struct{}) {
@@ -99,13 +123,19 @@ func (gdd *Gdd) reset(idx int) {
 func (gdd *Gdd) loop() {
 	update := gdd.source.Watch()
 	for us := range update {
-		affect := make(map[int]struct{}, 2*len(us))
+		affectM := make(map[int]struct{}, 2*len(us))
 		for _, u := range us {
 			if idx, ok := gdd.mapper[u.Name]; ok {
-				gdd.dfs(idx, affect)
+				gdd.dfs(idx, affectM)
 			}
 		}
-		for idx := range affect {
+		affect := internal.SetK(affectM)
+		sort.Slice(affect, func(i, j int) bool {
+			a := &gdd.row[i]
+			b := &gdd.row[j]
+			return a.sort < b.sort
+		})
+		for _, idx := range affect {
 			gdd.reset(idx)
 		}
 	}
