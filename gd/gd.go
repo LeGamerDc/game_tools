@@ -86,7 +86,7 @@ func (gdd *Gdd) buildDeps() {
 	}
 
 	n := len(gdd.row)
-	sort := 0
+	order := 0
 	visited := make(map[int]struct{}, n)
 	for i := 0; i < n; i++ {
 		for idx := range gdd.row {
@@ -99,8 +99,8 @@ func (gdd *Gdd) buildDeps() {
 				}
 			}
 			if top {
-				c.sort = sort
-				sort++
+				c.sort = order
+				order++
 				visited[idx] = struct{}{}
 			}
 		}
