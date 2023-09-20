@@ -9,4 +9,4 @@
 本库包含的commands:
 
 - `cmd/event_trigger` 用于生成`EventTable`用于提供基于事件的开发逻辑。
-- 等待开发
+- `gd` 用于方便读取配置文件，支持更新、懒加载、高性能。
