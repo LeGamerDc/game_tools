@@ -1,4 +1,4 @@
-module game_tools
+module github.com/legamerdc/game_tools
 
 go 1.21
 
