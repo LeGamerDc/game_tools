@@ -46,12 +46,12 @@ func (f *csvSource) Close() {
 func (f *csvSource) GetDoc(name string) string {
 	p, ok := f.dirMap[name]
 	if !ok {
-		slog.Error("fsSource get doc no dir")
+		slog.Error("fsSource get doc no dir", slog.String("name", name))
 		return ""
 	}
 	b, err := os.ReadFile(p)
 	if err != nil {
-		slog.Error("fsSource get doc", "err", err)
+		slog.Error("fsSource get doc", slog.Any("e", err))
 		return ""
 	}
 	return string(b)
@@ -124,7 +124,8 @@ func (f *csvSource) initDirectory(root string) {
 			}
 		} else {
 			name := d.Name()
-			f.dirMap[strings.TrimSuffix(name, filepath.Ext(name))] = p
+			name = strings.TrimSuffix(name, filepath.Ext(name))
+			f.dirMap[name] = p
 		}
 		return nil
 	})

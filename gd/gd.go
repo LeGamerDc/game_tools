@@ -1,12 +1,10 @@
 package gd
 
 import (
-	"log/slog"
-	"sort"
-	"strings"
-
 	"github.com/legamerdc/game_tools/internal"
 	"github.com/legamerdc/game_tools/internal/resync"
+	"log/slog"
+	"sort"
 )
 
 type store struct {
@@ -22,7 +20,7 @@ func (s *store) Load(key Key, loader func(name string) string,
 	parser func(raw string) interface{},
 ) interface{} {
 	s.once.Do(func() {
-		raw := loader(strings.ToLower(key.String()))
+		raw := loader(key.String())
 		s.doc = parser(raw)
 	})
 	return s.doc
@@ -71,7 +69,7 @@ func (gdd *Gdd) Register(key Key, loader func(string) interface{}, deps ...Key) 
 		deps:   d,
 		parser: loader,
 	}
-	gdd.mapper[strings.ToLower(key.String())] = key.Idx()
+	gdd.mapper[key.String()] = key.Idx()
 }
 
 func (gdd *Gdd) GetDoc(key Key) (doc interface{}) {
