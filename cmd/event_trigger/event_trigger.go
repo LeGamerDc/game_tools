@@ -7,11 +7,12 @@ import (
 	"go/ast"
 	"go/format"
 	"go/token"
-	"golang.org/x/tools/go/packages"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"golang.org/x/tools/go/packages"
 )
 
 var (
