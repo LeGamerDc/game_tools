@@ -14,6 +14,11 @@ import (
 )
 
 func NewCsvSource(root string) (Source, error) {
+	var e error
+	root, e = filepath.Abs(root)
+	if e != nil {
+		return nil, e
+	}
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return nil, errors.New("create fs watcher fail")
@@ -44,7 +49,7 @@ func (f *csvSource) GetDoc(name string) string {
 		slog.Error("fsSource get doc no dir")
 		return ""
 	}
-	b, err := os.ReadFile(path.Join(p, name, "csv"))
+	b, err := os.ReadFile(p)
 	if err != nil {
 		slog.Error("fsSource get doc", "err", err)
 		return ""
