@@ -118,7 +118,8 @@ func (f *csvSource) initDirectory(root string) {
 				dirs = append(dirs, p)
 			}
 		} else {
-			f.dirMap[d.Name()] = p
+			name := d.Name()
+			f.dirMap[strings.TrimSuffix(name, filepath.Ext(name))] = p
 		}
 		return nil
 	})
